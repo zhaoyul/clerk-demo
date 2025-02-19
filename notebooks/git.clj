@@ -54,4 +54,6 @@
                                        (:changed_files c)))]]]])
                           (range)
                           commits))]])}
- commits)
+  commits)
+
+#_(clerk/show! "notebooks/git.clj")

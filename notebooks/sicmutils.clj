@@ -1,3 +1,4 @@
+#_{:clj-kondo/ignore [:refer-all]}
 (ns sicmutils
   (:refer-clojure
    :exclude [+ - * / partial ref zero? numerator denominator compare = run!])
@@ -5,9 +6,9 @@
             [sicmutils.env :as e :refer :all]
             [sicmutils.expression.render :as xr]))
 
-;; ## Lagrangian（拉格朗日量）
+;; ## Lagrangian(拉格朗日量)
 ;;
-;; 从一个从 `theta1`, `theta2` 到矩形坐标的坐标变换开始。我们将通过将此变换与具有熟悉的 `T - V` 形式的矩形拉格朗日量组合来生成我们的拉格朗日量。
+;; 从一个从 `theta1`, `theta2` 到矩形坐标的坐标变换开始. 我们将通过将此变换与具有熟悉的 `T - V` 形式的矩形拉格朗日量组合来生成我们的拉格朗日量.
 (defn angles->rect [l1 l2]
   (fn [[_ [theta1 theta2]]]
     (let [x1 (* l1 (sin theta1))
@@ -16,7 +17,7 @@
           y2 (- y1 (* l2 (cos (+ theta1 theta2))))]
       (up x1 y1 x2 y2))))
 
-;; `T` 描述了两个粒子在矩形坐标系中的动能之和。
+;; `T` 描述了两个粒子在矩形坐标系中的动能之和. `xdot`的意思是x在t上的导数, 即x方向的速度.
 (defn T [m1 m2]
   (fn [[_ _ [xdot1 ydot1 xdot2 ydot2]]]
     (+ (* 1/2 m1 (+ (square xdot1)
@@ -25,27 +26,27 @@
                     (square ydot2))))))
 
 
-;; `V` 描述了一个均匀的引力势，系数为 `g`，作用于质量分别为 `m1` 和 `m2` 的两个粒子。同样，这是用矩形坐标写成的。
+;; `V` 描述了一个均匀的引力势, 系数为 `g`, 作用于质量分别为 `m1` 和 `m2` 的两个粒子. 同样, 这是用矩形坐标写成的.
 
 (defn V [m1 m2 g]
   (fn [[_ [_ y1 _ y2]]]
     (+ (* m1 g y1)
        (* m2 g y2))))
 
-;; 通过从 `(T m1 m2)` 中减去 `(V m1 m2 g)` 来形成矩形拉格朗日量 `L`：
+;; 通过从 `(T m1 m2)` 中减去 `(V m1 m2 g)` 来形成矩形拉格朗日量 `L`:
 
 (defn L-rect [m1 m2 g]
   (- (T m1 m2)
      (V m1 m2 g)))
 
-;; 通过将 `L-rect` 与正确转换的 `angles->rect` 坐标变换组合，形成广义坐标（每个段的角度）中的最终拉格朗日量！
+;; 通过将 `L-rect` 与正确转换的 `angles->rect` 坐标变换组合, 形成广义坐标(每个段的角度)中的最终拉格朗日量!
 
 (defn L-double-pendulum [m1 m2 l1 l2 g]
   (compose (L-rect m1 m2 g)
            (F->C
             (angles->rect l1 l2))))
 
-;; 拉格朗日量很大且复杂：
+;; 拉格朗日量很大且复杂:
 
 (def symbolic-L
   ((L-double-pendulum 'm_1 'm_2 'l_1 'l_2 'g)
@@ -53,18 +54,18 @@
        (up 'theta_1 'theta_2)
        (up 'theta_1dot 'theta_2dot))))
 
-;; 让我们简化一下：
+;; 让我们简化一下:
 
 (simplify symbolic-L)
 
-;; 更好的是，让我们将其渲染为 LaTeX，并创建一个辅助函数 `render-eq`，以便更容易渲染简化的方程：
+;; 更好的是, 让我们将其渲染为 LaTeX, 并创建一个辅助函数 `render-eq`, 以便更容易渲染简化的方程:
 
 (def render-eq
   (comp clerk/tex ->TeX simplify))
 
 (render-eq symbolic-L)
 
-;; 这是系统的运动方程：
+;; 这是系统的运动方程:
 
 (let [L (L-double-pendulum 'm_1 'm_2 'l_1 'l_2 'g)]
   (binding [xr/*TeX-vertical-down-tuples* true]
@@ -74,52 +75,52 @@
            (literal-function 'theta_2)))
       't))))
 
-;; 这些意味着什么？
+;; 这些意味着什么?
 ;;
-;; - 系统有两个自由度：$\theta_1$ 和 $\theta_2$。
-;; - 在任何时间点 `t`，上述两个方程（充满了位置函数的一阶和二阶导数）将保持为真
-;; - 系统可以使用这些方程来一次一个刻度地模拟系统。
+;; - 系统有两个自由度: $\theta_1$ 和 $\theta_2$.
+;; - 在任何时间点 `t`, 上述两个方程(充满了位置函数的一阶和二阶导数)将保持为真
+;; - 系统可以使用这些方程来一次一个刻度地模拟系统.
 
-;; ## Simulation（模拟）
+;; ## Simulation(模拟)
 ;;
-;; 接下来，让我们使用这些运动方程运行一个模拟，并收集每个坐标演化的数据。
+;; 接下来, 让我们使用这些运动方程运行一个模拟, 并收集每个坐标演化的数据.
 ;;
-;; 这是练习 1.44 中指定的常量：
+;; 这是练习 1.44 中指定的常量:
 ;;
-;; 质量单位为 kg：
+;; 质量单位为 kg:
 
 (def m1 1.0)
 (def m2 3.0)
 
-;; 长度单位为米：
+;; 长度单位为米:
 
 (def l1 1.0)
 (def l2 0.9)
 
-;; `g` 的单位为 m/s^2：
+;; `g` 的单位为 m/s^2:
 
 (def g 9.8)
 
-;; 这是两组 `theta1`、`theta2` 角度的初始对，分别对应于混沌和规则的初始条件：
+;; 这是两组 `theta1`, `theta2` 角度的初始对, 分别对应于混沌和规则的初始条件:
 
 (def chaotic-initial-q (up (/ Math/PI 2) Math/PI))
 (def regular-initial-q (up (/ Math/PI 2) 0.0))
 
-;; 将 `Lagrangian->state-derivative` 与 `L-double-pendulum` 组合会产生一个状态导数，我们可以将其与 ODE 求解器一起使用：
+;; 将 `Lagrangian->state-derivative` 与 `L-double-pendulum` 组合会产生一个状态导数, 我们可以将其与 ODE 求解器一起使用:
 
 (def state-derivative
   (compose
    Lagrangian->state-derivative
    L-double-pendulum))
 
-;; 最后，我们模拟的两个默认参数。我们将以 0.01 秒的步长记录数据，并模拟到 50 秒的时限。
+;; 最后, 我们模拟的两个默认参数. 我们将以 0.01 秒的步长记录数据, 并模拟到 50 秒的时限.
 
 (def step 0.01)
 (def horizon 50)
 
-;; `run!` 将返回一个包含 5001 个状态的序列，每个状态对应于模拟中每个测量点。较小arity的版本只传入默认的质量和长度，但如果需要，你可以用较大的arity版本覆盖这些值。
+;; `run!` 将返回一个包含 5001 个状态的序列, 每个状态对应于模拟中每个测量点. 较小arity的版本只传入默认的质量和长度, 但如果需要, 你可以用较大的arity版本覆盖这些值.
 
-;; （这里的接口可能需要改进：`integrate-state-derivative` 使其更整洁，但我现在想将其公开。）
+;; (这里的接口可能需要改进: `integrate-state-derivative` 使其更整洁, 但我现在想将其公开. )
 
 (defn run!
   ([step horizon initial-coords]
@@ -140,50 +141,50 @@
                    collector conj! state))})
      (persistent! @collector))))
 
-;; 为每组初始条件运行模拟，并显示最终状态。首先是混沌的：
+;; 为每组初始条件运行模拟, 并显示最终状态. 首先是混沌的:
 
 (def raw-chaotic-data
   (run! step horizon chaotic-initial-q))
 
-;; 看起来不错：
+;; 看起来不错:
 
 (peek raw-chaotic-data)
 
-;; 接下来，是规则的初始条件：
+;; 接下来, 是规则的初始条件:
 
 (def raw-regular-data
   (run! step horizon regular-initial-q))
 
-;; 查看最终状态：
+;; 查看最终状态:
 
 (peek raw-regular-data)
 
-;; ## Measurements, Data Transformation（测量，数据转换）
+;; ## Measurements, Data Transformation(测量, 数据转换)
 
-;; 接下来，我们将绘制这些状态元组序列中捕获的测量值。
+;; 接下来, 我们将绘制这些状态元组序列中捕获的测量值.
 
-;; 该练习要求我们将系统的能量绘制为时间的函数。将 `Lagrangian->energy` 与 `L-double-pendulum` 组合会产生一个新函数（状态元组的函数！），该函数将返回系统中的当前能量：
+;; 该练习要求我们将系统的能量绘制为时间的函数. 将 `Lagrangian->energy` 与 `L-double-pendulum` 组合会产生一个新函数(状态元组的函数! ), 该函数将返回系统中的当前能量:
 
 (def L-energy
   (compose
    Lagrangian->energy
    L-double-pendulum))
 
-;; `energy-monitor` 返回一个 `state` 函数，该函数在其闭包中存储一个初始能量值，并返回每个新状态的能量与原始能量相比的增量。
+;; `energy-monitor` 返回一个 `state` 函数, 该函数在其闭包中存储一个初始能量值, 并返回每个新状态的能量与原始能量相比的增量.
 
 (defn energy-monitor [energy-fn initial-state]
   (let [initial-energy (energy-fn initial-state)]
     (fn [state]
       (- (energy-fn state) initial-energy))))
 
-;; 最后，是大型的 `transform-data` 函数。我们将使用的图表库喜欢 Clojure 字典；`transform-data` 将我们的原始数据转换为一个字典序列，其中包含我们可能关心的所有值。这包括：
+;; 最后, 是大型的 `transform-data` 函数. 我们将使用的图表库喜欢 Clojure 字典; `transform-data` 将我们的原始数据转换为一个字典序列, 其中包含我们可能关心的所有值. 这包括:
 
 ;; - 广义坐标角度
 ;; - 这些角度的广义速度
 ;; - 每个钟摆摆锤的矩形坐标
-;; - `:d-energy`，模拟中每个点的能量误差
+;; - `:d-energy`, 模拟中每个点的能量误差
 
-;; 这是 `transform-data`：
+;; 这是 `transform-data`:
 
 #_{:clj-kondo/ignore [:unresolved-symbol]}
 (defn transform-data [xs]
@@ -205,7 +206,7 @@
               :d-energy (monitor state)}))
          xs)))
 
-;; 以下形式转换每个初始条件的原始数据，并将结果绑定到 `chaotic-data` 和 `regular-data` 以进行探索。
+;; 以下形式转换每个初始条件的原始数据, 并将结果绑定到 `chaotic-data` 和 `regular-data` 以进行探索.
 
 (def chaotic-data
   (doall
@@ -215,21 +216,21 @@
   (doall
    (transform-data raw-regular-data)))
 
-;; 这是最终的，转换后的混沌状态：
+;; 这是最终的, 转换后的混沌状态:
 
 (last chaotic-data)
 
-;; 这是类似的规则状态：
+;; 这是类似的规则状态:
 
 (last regular-data)
 
-;; ## Data Visualization Utilities（数据可视化实用程序）
+;; ## Data Visualization Utilities(数据可视化实用程序)
 
-;; [Vega-Lite](https://vega.github.io/vega-lite/) 允许我们可视化系统。
+;; [Vega-Lite](https://vega.github.io/vega-lite/) 允许我们可视化系统.
 
-;; 我不是这方面的专家，但现在这样做就可以了。
+;; 我不是这方面的专家, 但现在这样做就可以了.
 
-;; 首先，一个将我们上面生成的字典转换为 `x, y` 坐标序列的函数，并为每个钟摆摆锤的点标记不同的 ID：
+;; 首先, 一个将我们上面生成的字典转换为 `x, y` 坐标序列的函数, 并为每个钟摆摆锤的点标记不同的 ID:
 
 (defn points-data [data]
   (mapcat (fn [{:keys [t x1 y1 x2 y2]}]
@@ -243,7 +244,7 @@
               :id :p2}])
           data))
 
-;; `segments-data` 生成钟摆段的端点，从摆锤到摆锤：
+;; `segments-data` 生成钟摆段的端点, 从摆锤到摆锤:
 
 (defn segments-data [data]
   (mapcat (fn [{:keys [t x1 y1 x2 y2]}]
@@ -261,7 +262,7 @@
               :id :p2}])
           data))
 
-;; ## Visualizations（可视化）
+;; ## Visualizations(可视化)
 
 ;; 一个应该在 clojure.core 中的辅助函数
 (defn deep-merge [v & vs]
@@ -272,7 +273,7 @@
     (when (some identity vs)
       (reduce #(rec-merge %1 %2) v vs))))
 
-;; 有了这些工具，让我们制作一些图表。我将第一个图表称为 `system-inspector`；此函数将返回一个图表，该图表将允许我们使用时间滑块来演化系统，并监视两个角度、能量误差以及钟摆摆锤本身随时间演化的过程。
+;; 有了这些工具, 让我们制作一些图表. 我将第一个图表称为 `system-inspector`; 此函数将返回一个图表, 该图表将允许我们使用时间滑块来演化系统, 并监视两个角度, 能量误差以及钟摆摆锤本身随时间演化的过程.
 
 (defn system-inspector [data]
   {:config {:bar {:binSpacing 1, :discreteBandSize 5, :continuousBandSize 5}},
@@ -333,19 +334,19 @@
                               {:encoding {:y {:field :theta2},
                                           :tooltip [{:field :theta2}]}}])}]})
 
-;; 这是混沌初始条件的系统监视器：
+;; 这是混沌初始条件的系统监视器:
 
 (clerk/vl
  (system-inspector chaotic-data))
 
-;; 再次是规则初始条件的系统监视器：
+;; 再次是规则初始条件的系统监视器:
 
 (clerk/vl
  (system-inspector regular-data))
 
-;; ## Generalized coordinates, velocities（广义坐标，速度）
+;; ## Generalized coordinates, velocities(广义坐标, 速度)
 
-;; `angles-plot` 生成一个绘图，没有动画，显示了 theta 角度及其相关的速度：
+;; `angles-plot` 生成一个绘图, 没有动画, 显示了 theta 角度及其相关的速度:
 
 (defn angles-plot [data]
   (let [quarter-spec {:encoding {:y {:field :unassigned
@@ -377,19 +378,19 @@
                                 {:encoding {:y {:field :thetadot2}
                                             :tooltip [{:field :theta2}]}}])}]}))
 
-;; 这是混沌初始条件的角度：
+;; 这是混沌初始条件的角度:
 
 (clerk/vl
  (angles-plot chaotic-data))
 
-;; 这是规则初始条件的角度：
+;; 这是规则初始条件的角度:
 
 (clerk/vl
  (angles-plot regular-data))
 
-;; ## Double Double Pendulum!（双重双摆！）
+;; ## Double Double Pendulum!(双重双摆! )
 
-;; 这里还没有可视化，但是代码运行良好。
+;; 这里还没有可视化, 但是代码运行良好.
 
 (defn L-double-double-pendulum [m1 m2 l1 l2 g]
   (fn [[t [thetas1 thetas2] [qdots1 qdots2]]]
@@ -439,15 +440,15 @@
 (def raw-dd-chaotic-data
   (run-double-double! step horizon chaotic-initial-q))
 
-;; 看起来不错：
+;; 看起来不错:
 
 (peek raw-dd-chaotic-data)
 
-;; 接下来，是规则的初始条件：
+;; 接下来, 是规则的初始条件:
 
 (def raw-dd-regular-data
   (run-double-double! step horizon regular-initial-q))
 
-;; 查看最终状态：
+;; 查看最终状态:
 
 (peek raw-dd-regular-data)

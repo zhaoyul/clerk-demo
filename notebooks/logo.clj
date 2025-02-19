@@ -101,4 +101,4 @@
 
 ;; This is called a _conformal map_ by mathematicians. 😍
 
-#_(clerk/show! "notebooks/logo.clj")
+(clerk/show! "notebooks/logo.clj")

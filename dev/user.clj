@@ -24,6 +24,8 @@
 
   (clerk/show! "index.md")
 
+  (clerk/show! "notebooks/slideshow.md")
+
   ;; TODO If you would like more details about how Clerk works, here's a
   ;; notebook with some implementation details.
   ;; (clerk/show! "notebooks/how_clerk_works.clj")

@@ -57,3 +57,5 @@
                           :r 0.5}]))
             (repeatedly 250 #(vector (rand) (rand) #_1.0)))))
 
+
+(clerk/show! "notebooks/perceptron.clj")

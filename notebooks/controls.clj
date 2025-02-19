@@ -37,3 +37,4 @@
 
 
 #_(clerk/clear-cache!)
+#_(clerk/show! "notebooks/controls.clj")
